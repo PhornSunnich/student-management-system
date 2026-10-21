@@ -3,9 +3,9 @@ spring:
     name: student-app
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/student_db
-    username: postgres
-    password: 123
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/student_db}
+    username: ${DATABASE_USER:postgres}
+    password: ${DATABASE_PASSWORD:123}
     driver-class-name: org.postgresql.Driver
 
   jpa:
