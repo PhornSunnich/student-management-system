@@ -5,10 +5,8 @@ import lombok.*;
 
 @Entity
 @Table(name = "students")
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
+@Getter @Setter
+@NoArgsConstructor @AllArgsConstructor
 @Builder
 public class Student {
 
@@ -19,11 +17,12 @@ public class Student {
     @Column(nullable = false)
     private String name;
 
-    @Column(nullable = false, unique = true)
-    private String email;
-
-    private String course;
-
     private Integer age;
 
+    private String major;
+
+    // ភ្ជាប់ទៅកាន់ User សម្រាប់គណនី Login
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "user_id", referencedColumnName = "id", nullable = false)
+    private User user;
 }

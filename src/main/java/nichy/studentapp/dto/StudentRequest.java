@@ -10,10 +10,13 @@ public class StudentRequest {
     @NotBlank(message = "Name is required")
     private String name;
 
-    @NotBlank(message = "Email is required")
     @Email(message = "Invalid email format")
-    private String email;
+    @NotBlank(message = "Email is required")
+    private String email; // 👈 សម្រាប់បង្កើត User Login
 
-    private String course;
+    @NotBlank(message = "Password is required")
+    private String password; // 👈 សម្រាប់បង្កើត User Login
+
     private Integer age;
+    private String major;
 }
