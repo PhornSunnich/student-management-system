@@ -14,6 +14,9 @@ COPY build.gradle .
 COPY settings.gradle .
 COPY src src
 
+# 👈 បន្ថែមបន្ទាត់នេះដើម្បីបើកសិទ្ធិឱ្យ gradlew ក្នុង Linux container ផ្ទាល់
+RUN chmod +x gradlew
+
 # Run command ដើម្បី Build jar file
 RUN ./gradlew bootJar --no-daemon
 
@@ -27,5 +30,5 @@ COPY --from=build /app/build/libs/*.jar app.jar
 # បើក Port 8080
 EXPOSE 8080
 
-# ដំណើរការ
+# ដំណើរការแอปพลิเคชัน
 ENTRYPOINT ["java", "-jar", "app.jar"]
