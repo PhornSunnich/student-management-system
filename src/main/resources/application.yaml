@@ -2,10 +2,11 @@ spring:
   application:
     name: student-app
 
+
   datasource:
-    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/student_db}
-    username: ${DATABASE_USER:postgres}
-    password: ${DATABASE_PASSWORD:123}
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -16,10 +17,10 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
-springdoc:
-  api-docs:
-    path: /v3/api-docs
-  swagger-ui:
-    path: /swagger-ui.html
-    enabled: true
-    use-root-path: true
+  springdoc:
+    api-docs:
+      path: /v3/api-docs
+    swagger-ui:
+      path: /swagger-ui.html
+      enabled: true
+      use-root-path: true
