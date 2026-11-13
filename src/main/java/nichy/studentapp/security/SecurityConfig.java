@@ -31,8 +31,8 @@ public class SecurityConfig {
 
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
-        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider(); // ប្រើ Default Constructor
-        authProvider.setUserDetailsService(userDetailsService); // កំណត់ UserDetailsService តាម Method ນີ້
+        // ត្រូវដាក់ userDetailsService ចូលក្នុង Constructor ទីនេះទើបមិនចេញ Error Compile
+        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider(userDetailsService);
         authProvider.setPasswordEncoder(passwordEncoder());
         return authProvider;
     }
