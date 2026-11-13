@@ -31,7 +31,8 @@ public class SecurityConfig {
 
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
-        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider(userDetailsService);
+        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider(); // ប្រើ Default Constructor
+        authProvider.setUserDetailsService(userDetailsService); // កំណត់ UserDetailsService តាម Method ນີ້
         authProvider.setPasswordEncoder(passwordEncoder());
         return authProvider;
     }
@@ -47,10 +48,9 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable()) // បិទ CSRF ព្រោះយើងប្រើ REST API / JWT
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // ត្រូវធានាថា Path នេះត្រូវគ្នាពិតប្រាកដជាមួយ Controller
-                        .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
-                        .anyRequest().authenticated()
+                        .requestMatchers("/api/auth/**").permitAll() // អនុញ្ញាតឱ្យចូលដោយសេរីសម្រាប់ Register/Login
+                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll() // អនុញ្ញាត Swagger
+                        .anyRequest().authenticated() // Endpoints ដទៃទៀតទាមទារ Token
                 );
 
         http.authenticationProvider(authenticationProvider());
