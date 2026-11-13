@@ -8,8 +8,8 @@ services:
     restart: always
     environment:
       POSTGRES_DB: student_db
-      POSTGRES_USER: root
-      POSTGRES_PASSWORD: rootpassword
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 123
     ports:
       - "5432:5432"
     volumes:
@@ -36,8 +36,8 @@ services:
         condition: service_healthy # រង់ចាំរហូតទាល់តែ DB ដំណើរការស្រួលបួលពិតប្រាកដ
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/student_db
-      - SPRING_DATASOURCE_USERNAME=root
-      - SPRING_DATASOURCE_PASSWORD=rootpassword
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=123
       - SPRING_JPA_HIBERNATE_DDL_AUTO=update
     networks:
       - student-network
