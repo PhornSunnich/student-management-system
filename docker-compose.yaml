@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  # ផ្នែក Database (PostgreSQL)
+  db:
+    image: postgres:15-alpine
+    container_name: student_app_db
+    restart: always
+    environment:
+      POSTGRES_DB: student_db
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: rootpassword
+    ports:
+      - "5432:5432"
+    volumes:
+      - student_pgdata:/var/lib/postgresql/data
+    networks:
+      - student-network
+    # បន្ថែម Healthcheck ដើម្បីធានាថា DB ដំណើរការស្រួលបួលសិន
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U root -d student_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 10s
+
+  # ផ្នែក Spring Boot Application (Student App)
+  spring-app:
+    build: .
+    container_name: student_app_backend
+    restart: always
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy # រង់ចាំរហូតទាល់តែ DB ដំណើរការស្រួលបួលពិតប្រាកដ
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/student_db
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=rootpassword
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+    networks:
+      - student-network
+
+volumes:
+  student_pgdata:
+
+networks:
+  student-network:
+    driver: bridge

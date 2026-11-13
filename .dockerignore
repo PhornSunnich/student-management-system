@@ -1,0 +1,6 @@
+# លុប ឬដាក់សញ្ញា # មុខ build/
+# build/
+.gradle/
+.idea/
+.git/
+*.iml
