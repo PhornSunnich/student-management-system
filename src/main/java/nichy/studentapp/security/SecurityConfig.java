@@ -14,6 +14,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
 
 @Configuration
 @EnableWebSecurity
@@ -31,7 +32,6 @@ public class SecurityConfig {
 
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
-        // ត្រូវដាក់ userDetailsService ចូលក្នុង Constructor ទីនេះទើបមិនចេញ Error Compile
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider(userDetailsService);
         authProvider.setPasswordEncoder(passwordEncoder());
         return authProvider;
@@ -48,9 +48,26 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable()) // បិទ CSRF ព្រោះយើងប្រើ REST API / JWT
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll() // អនុញ្ញាតឱ្យចូលដោយសេរីសម្រាប់ Register/Login
+                        .requestMatchers("/", "/api/auth/**").permitAll() // អនុញ្ញាត Root URL និង Auth ដោយសេរី (ការពារ Error 403 ពេល Scan)
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll() // អនុញ្ញាត Swagger
                         .anyRequest().authenticated() // Endpoints ដទៃទៀតទាមទារ Token
+                )
+                .headers(headers -> headers
+                        .frameOptions(frame -> frame.sameOrigin()) // X-Frame-Options (ការពារ Clickjacking)
+                        .contentTypeOptions(content -> {})         // X-Content-Type-Options (ការពារ MIME-sniffing)
+                        .httpStrictTransportSecurity(hsts -> hsts  // Strict-Transport-Security (HSTS)
+                                .includeSubDomains(true)
+                                .maxAgeInSeconds(31536000)
+                        )
+                        .contentSecurityPolicy(csp -> csp          // Content-Security-Policy (CSP)
+                                .policyDirectives("default-src 'self'")
+                        )
+                        .referrerPolicy(referrer -> referrer       // Referrer-Policy
+                                .policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN)
+                        )
+                        .permissionsPolicy(permissions -> permissions // Permissions-Policy
+                                .policy("geolocation=(), microphone=(), camera=()")
+                        )
                 );
 
         http.authenticationProvider(authenticationProvider());
