@@ -5,21 +5,22 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.stereotype.Component;
 
-import java.security.Key;
+import javax.crypto.SecretKey;
 import java.util.Date;
 
 @Component
 public class JwtUtils {
-    // Secret let ( should be 256 bits )
-    private final String jwtSecret = "myFirstProjectAboutStudentManagementSystemSpringFramework123";
-    private final int jwtExpirationMs = 86400000;
 
-    private Key getSigningKey(){
+    // Secret key (Should be at least 256 bits)
+    private final String jwtSecret = "myFirstProjectAboutStudentManagementSystemSpringFramework123";
+    private final int jwtExpirationMs = 86400000; // 24 ម៉ោង
+
+    private SecretKey getSigningKey() {
         return Keys.hmacShaKeyFor(jwtSecret.getBytes());
     }
 
-    // create Token from Username or Email
-    public String generateToken(String username){
+    // បង្កើត Token ពី Username ឬ Email
+    public String generateToken(String username) {
         return Jwts.builder()
                 .subject(username)
                 .issuedAt(new Date())
@@ -28,25 +29,25 @@ public class JwtUtils {
                 .compact();
     }
 
-    // get Username form Token
-    public String getUsernameFromJwtToken(String token){
+    // ទាញយក Username ពី Token
+    public String getUsernameFromJwtToken(String token) {
         return Jwts.parser()
-                .verifyWith((javax.crypto.SecretKey) getSigningKey())
+                .verifyWith(getSigningKey())
                 .build()
                 .parseSignedClaims(token)
                 .getPayload()
                 .getSubject();
     }
 
-    // check correct Token
-    public boolean validateJwtToken(String authToken){
+    // ពិនិត្យភាពត្រឹមត្រូវរបស់ Token
+    public boolean validateJwtToken(String authToken) {
         try {
             Jwts.parser()
-                    .verifyWith((javax.crypto.SecretKey) getSigningKey())
+                    .verifyWith(getSigningKey())
                     .build()
                     .parseSignedClaims(authToken);
             return true;
-        }catch (JwtException e){
+        } catch (JwtException e) {
             System.err.println("Invalid JWT token: " + e.getMessage());
         }
         return false;
