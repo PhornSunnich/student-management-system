@@ -65,7 +65,7 @@ public class SecurityConfig {
                         .referrerPolicy(referrer -> referrer       // Referrer-Policy
                                 .policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN)
                         )
-                        .permissionsPolicy(permissions -> permissions // Permissions-Policy
+                        .permissionsPolicyHeader(permissions -> permissions // Permissions-Policy
                                 .policy("geolocation=(), microphone=(), camera=()")
                         )
                 );
