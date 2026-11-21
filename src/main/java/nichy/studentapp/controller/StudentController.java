@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import nichy.studentapp.dto.StudentRequest;
 import nichy.studentapp.dto.StudentResponse;
+import nichy.studentapp.dto.UpdateProfileRequest;
 import nichy.studentapp.service.StudentService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,28 +16,29 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/students")
-@CrossOrigin(origins = "*") // 👈 អនុញ្ញាតឱ្យ Frontend ហៅ API បាន
 @RequiredArgsConstructor
 public class StudentController {
     private final StudentService studentService;
 
     @PostMapping
-    public ResponseEntity<StudentResponse> createStudent(@Valid @RequestBody StudentRequest request){
+    public ResponseEntity<StudentResponse> createStudent(@Valid @RequestBody StudentRequest request) {
         return new ResponseEntity<>(studentService.createStudent(request), HttpStatus.CREATED);
     }
 
     @GetMapping
-    public ResponseEntity<List<StudentResponse>> getAllStudents(){
+    public ResponseEntity<List<StudentResponse>> getAllStudents() {
         return ResponseEntity.ok(studentService.getAllStudents());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<StudentResponse> getStudentById(@PathVariable Long id){
+    public ResponseEntity<StudentResponse> getStudentById(@PathVariable Long id) {
         return ResponseEntity.ok(studentService.getStudentById(id));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<StudentResponse> updateStudent(@PathVariable Long id, @Valid @RequestBody StudentRequest request){
+    public ResponseEntity<StudentResponse> updateStudent(
+            @PathVariable Long id,
+            @Valid @RequestBody StudentRequest request) {
         return ResponseEntity.ok(studentService.updateStudent(id, request));
     }
 
@@ -44,10 +46,7 @@ public class StudentController {
     @GetMapping("/me")
     @PreAuthorize("hasAnyAuthority('STUDENT', 'ROLE_STUDENT')")
     public ResponseEntity<StudentResponse> getCurrentStudentProfile(Principal principal) {
-        // principal.getName() គឺទាញយក Email ពី JWT Token ដែលកំពុង Login ស្រាប់
-        String email = principal.getName();
-        StudentResponse response = studentService.getStudentProfileByEmail(email);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(studentService.getStudentProfileByEmail(principal.getName()));
     }
 
     // 2. POST /api/students/me ៖ សម្រាប់បង្កើត ឬកែសម្រួល Profile ខ្លួនឯង
@@ -56,19 +55,21 @@ public class StudentController {
     public ResponseEntity<StudentResponse> createOrUpdateMyProfile(
             Principal principal,
             @Valid @RequestBody StudentRequest request) {
+        return ResponseEntity.ok(studentService.saveOrUpdateProfile(principal.getName(), request));
+    }
 
-        String email = principal.getName();
-        StudentResponse response = studentService.saveOrUpdateProfile(email, request);
-        return ResponseEntity.ok(response);
+    // 3. PUT /api/students/me ៖ កែសម្រួល Profile និង/ឬប្ដូរ Password ផ្ទាល់ខ្លួន
+    @PutMapping("/me")
+    @PreAuthorize("hasAnyAuthority('STUDENT', 'ROLE_STUDENT')")
+    public ResponseEntity<StudentResponse> updateMyProfile(
+            Principal principal,
+            @RequestBody UpdateProfileRequest request) {
+        return ResponseEntity.ok(studentService.updateMyProfile(principal.getName(), request));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteStudent(@PathVariable Long id){
+    public ResponseEntity<Void> deleteStudent(@PathVariable Long id) {
         studentService.deleteStudent(id);
         return ResponseEntity.noContent().build();
     }
-
-
-
-
 }

@@ -21,6 +21,8 @@ public class Student {
 
     private String major;
 
+    private String phone;
+
     // ភ្ជាប់ទៅកាន់ User សម្រាប់គណនី Login
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "user_id", referencedColumnName = "id", nullable = false)
