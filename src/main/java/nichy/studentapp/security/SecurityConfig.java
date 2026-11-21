@@ -4,8 +4,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -14,11 +16,9 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
-import org.springframework.http.HttpStatus;
-import org.springframework.security.config.Customizer;
-import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 
 @Configuration
 @EnableWebSecurity
@@ -49,33 +49,38 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .cors(Customizer.withDefaults()) // uses the CorsConfig bean
-                .csrf(csrf -> csrf.disable()) // បិទ CSRF ព្រោះយើងប្រើ REST API / JWT
+                .cors(Customizer.withDefaults())
+                .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                // No/invalid token -> 401 (not 403), so the mobile app can log out
                 .exceptionHandling(e -> e.authenticationEntryPoint(
                         new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // CORS preflight
-                        .requestMatchers("/", "/api/auth/**").permitAll() // អនុញ្ញាត Root URL និង Auth ដោយសេរី (ការពារ Error 403 ពេល Scan)
-                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll() // អនុញ្ញាត Swagger
-                        .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll() // allow users to view this path by no need login token
-                        .anyRequest().authenticated() // Endpoints ដទៃទៀតទាមទារ Token
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers("/", "/api/auth/**").permitAll()
+                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/categories/**",
+                                "/api/courses/**",
+                                "/api/lessons/**",
+                                "/api/reviews/course/**"
+                        ).permitAll()
+                        .anyRequest().authenticated()
                 )
                 .headers(headers -> headers
-                        .frameOptions(frame -> frame.sameOrigin()) // X-Frame-Options (ការពារ Clickjacking)
-                        .contentTypeOptions(content -> {})         // X-Content-Type-Options (ការពារ MIME-sniffing)
-                        .httpStrictTransportSecurity(hsts -> hsts  // Strict-Transport-Security (HSTS)
+                        .frameOptions(frame -> frame.sameOrigin())
+                        .contentTypeOptions(content -> {})
+                        .httpStrictTransportSecurity(hsts -> hsts
                                 .includeSubDomains(true)
                                 .maxAgeInSeconds(31536000)
                         )
-                        .contentSecurityPolicy(csp -> csp          // Content-Security-Policy (CSP)
+                        .contentSecurityPolicy(csp -> csp
                                 .policyDirectives("default-src 'self'")
                         )
-                        .referrerPolicy(referrer -> referrer       // Referrer-Policy
+                        .referrerPolicy(referrer -> referrer
                                 .policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN)
                         )
-                        .permissionsPolicyHeader(permissions -> permissions // Permissions-Policy
+                        .permissionsPolicyHeader(permissions -> permissions
                                 .policy("geolocation=(), microphone=(), camera=()")
                         )
                 );

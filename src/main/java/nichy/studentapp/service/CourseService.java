@@ -1,10 +1,7 @@
 package nichy.studentapp.service;
 
 import lombok.RequiredArgsConstructor;
-import nichy.studentapp.dto.CourseRequest;
-import nichy.studentapp.dto.CourseResponse;
-import nichy.studentapp.dto.EnrollmentRequest;
-import nichy.studentapp.dto.EnrollmentResponse;
+import nichy.studentapp.dto.*;
 import nichy.studentapp.entity.Category;
 import nichy.studentapp.entity.Course;
 import nichy.studentapp.entity.Enrollment;
@@ -15,6 +12,8 @@ import nichy.studentapp.repository.CourseRepository;
 import nichy.studentapp.repository.EnrollmentRepository;
 import nichy.studentapp.repository.StudentRepository;
 import nichy.studentapp.repository.UserRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -144,6 +143,24 @@ public class CourseService {
 
         Enrollment savedEnrollment = enrollmentRepository.save(enrollment);
         return mapToEnrollmentResponse(savedEnrollment);
+    }
+
+    public PagedResponse<CourseResponse> getCoursesPaged(String search, Long categoryId, Pageable pageable) {
+        Page<Course> coursePage = courseRepository.searchAndFilterCourses(search, categoryId, pageable);
+
+        List<CourseResponse> items = coursePage.getContent().stream()
+                .map(this::mapToCourseResponse)
+                .collect(Collectors.toList());
+
+        return PagedResponse.<CourseResponse>builder()
+                .content(items)
+                .pageNumber(coursePage.getNumber())
+                .pageSize(coursePage.getSize())
+                .totalElements(coursePage.getTotalElements())
+                .totalPages(coursePage.getTotalPages())
+                .first(coursePage.isFirst())
+                .last(coursePage.isLast())
+                .build();
     }
 
     // helper Mapping Methods
