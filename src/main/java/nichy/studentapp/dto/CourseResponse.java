@@ -15,4 +15,6 @@ public class CourseResponse {
     private String description;
     private Long instructorId;
     private String instructorEmail;
+    private Long categoryId;
+    private String categoryName;
 }

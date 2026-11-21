@@ -37,6 +37,12 @@ public class CourseController {
         return ResponseEntity.ok(courseService.getCourseById(id));
     }
 
+    // GET /api/courses/category/{categoryId}
+    @GetMapping("/category/{categoryId}")
+    public ResponseEntity<List<CourseResponse>> getCoursesByCategory(@PathVariable Long categoryId) {
+        return ResponseEntity.ok(courseService.getCoursesByCategoryId(categoryId));
+    }
+
     // 4. Update Course
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'ROLE_ADMIN', 'INSTRUCTOR', 'ROLE_INSTRUCTOR')")

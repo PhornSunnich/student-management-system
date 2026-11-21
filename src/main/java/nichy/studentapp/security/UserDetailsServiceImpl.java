@@ -19,16 +19,19 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        // ស្វែងរក User ក្នុង Database តាមរយៈ Email
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
 
-        // បង្កើត Spring Security UserDetails object
+        // Normalize: "student", "STUDENT" and "ROLE_STUDENT" all become "STUDENT"
+        String role = user.getRole() == null ? "STUDENT" : user.getRole().trim().toUpperCase();
+        if (role.startsWith("ROLE_")) {
+            role = role.substring(5);
+        }
+
         return org.springframework.security.core.userdetails.User.builder()
                 .username(user.getEmail())
-                .password(user.getPassword()) // ត្រូវធានាថា Password ក្នុង DB បានเข้ารหัส (Encoded)
-                .roles(user.getRole())  // កំណត់ Role (ឧ. STUDENT, INSTRUCTOR)
-                .authorities(Collections.singletonList(new SimpleGrantedAuthority(user.getRole())))
+                .password(user.getPassword()) // must be BCrypt-encoded in the database
+                .roles(role)                  // grants ROLE_STUDENT, ROLE_INSTRUCTOR, ...
                 .build();
     }
 }

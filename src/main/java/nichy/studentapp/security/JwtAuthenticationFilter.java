@@ -25,9 +25,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     // 👈 បន្ថែម method នេះដើម្បីរំលងការពិនិត្យ Token ចំពោះ Endpoint Public
     @Override
-    protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
-        String path = request.getRequestURI();
-        return path.startsWith("/api/auth/");
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getServletPath();
+        return "OPTIONS".equalsIgnoreCase(request.getMethod())
+                || path.startsWith("/api/auth/")
+                || path.startsWith("/swagger-ui")
+                || path.startsWith("/v3/api-docs");
     }
 
     @Override

@@ -10,4 +10,5 @@ import java.util.List;
 public interface CourseRepository extends JpaRepository<Course, Long> {
     // find all subject that created by 1 instructor
     List<Course> findByInstructorId(Long instructorId);
+    List<Course> findByCategoryId(Long categoryId);
 }
