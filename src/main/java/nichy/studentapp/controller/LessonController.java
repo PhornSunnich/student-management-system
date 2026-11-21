@@ -1,10 +1,9 @@
 package nichy.studentapp.controller;
 
 import lombok.RequiredArgsConstructor;
+import nichy.studentapp.dto.EnrollmentResponse;
 import nichy.studentapp.dto.LessonRequest;
 import nichy.studentapp.dto.LessonResponse;
-import nichy.studentapp.entity.Enrollment;
-import nichy.studentapp.entity.Lesson;
 import nichy.studentapp.service.LessonService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,8 +18,8 @@ public class LessonController {
     private final LessonService lessonService;
 
     @PostMapping
-    public ResponseEntity<Lesson> createLesson(@RequestBody LessonRequest request){
-        Lesson createdLesson = lessonService.createLesson(request);
+    public ResponseEntity<LessonResponse> createLesson(@RequestBody LessonRequest request){
+        LessonResponse createdLesson = lessonService.createLesson(request);
         return new ResponseEntity<>(createdLesson, HttpStatus.CREATED);
     }
 
@@ -60,14 +59,14 @@ public class LessonController {
         return ResponseEntity.ok(lessons);
     }
 
-    // check student progress
+    // 6. Check student progress (កែឈ្មោះ Method និង Return Type មកជា EnrollmentResponse)
     @PutMapping("/progress")
-    public ResponseEntity<Enrollment> updateProgress(
+    public ResponseEntity<EnrollmentResponse> updateProgress(
             @RequestParam Long studentId,
             @RequestParam Long courseId,
             @RequestParam Double progress
     ){
-        Enrollment updateEnrollment = lessonService.updateProgress(studentId, courseId, progress);
-        return ResponseEntity.ok(updateEnrollment);
+        EnrollmentResponse updatedEnrollment = lessonService.updateProgress(studentId, courseId, progress);
+        return ResponseEntity.ok(updatedEnrollment);
     }
 }
