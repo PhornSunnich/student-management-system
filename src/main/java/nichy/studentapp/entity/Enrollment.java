@@ -1,33 +1,36 @@
 package nichy.studentapp.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "enrollments")
+@Table(
+        name = "enrollments",
+        uniqueConstraints = {
+                @UniqueConstraint(columnNames = {"student_id", "course_id"})
+        }
+)
 @Getter @Setter
 @NoArgsConstructor @AllArgsConstructor
+@Builder
 public class Enrollment {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // relationship Many Enrollments -> 1 Student(User)
-    @ManyToOne
-    @JoinColumn(name= "student_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "student_id", nullable = false)
     private Student student;
 
-    // relationship Many Enrollments -> 1 Course
-    @ManyToOne
-    @JoinColumn(name="course_id", nullable= false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "course_id", nullable = false)
     private Course course;
 
     private LocalDateTime enrolledAt;
-    private Double progress; // example: 50.0%
+
+    @Column(nullable = false)
+    private Double progress = 0.0;
 }
