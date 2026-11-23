@@ -1,21 +1,29 @@
 package nichy.studentapp.service;
 
 import lombok.RequiredArgsConstructor;
-import nichy.studentapp.dto.*;
+import nichy.studentapp.dto.CourseRequest;
+import nichy.studentapp.dto.CourseResponse;
+import nichy.studentapp.dto.EnrollmentRequest;
+import nichy.studentapp.dto.EnrollmentResponse;
+import nichy.studentapp.dto.PagedResponse;
 import nichy.studentapp.entity.Category;
 import nichy.studentapp.entity.Course;
 import nichy.studentapp.entity.Enrollment;
+import nichy.studentapp.entity.Review;
 import nichy.studentapp.entity.Student;
 import nichy.studentapp.entity.User;
 import nichy.studentapp.repository.CategoryRepository;
 import nichy.studentapp.repository.CourseRepository;
 import nichy.studentapp.repository.EnrollmentRepository;
+import nichy.studentapp.repository.LessonRepository;
+import nichy.studentapp.repository.ReviewRepository;
 import nichy.studentapp.repository.StudentRepository;
 import nichy.studentapp.repository.UserRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
@@ -25,23 +33,25 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class CourseService {
+
     private final CourseRepository courseRepository;
     private final UserRepository userRepository;
     private final StudentRepository studentRepository;
     private final EnrollmentRepository enrollmentRepository;
-    private final CategoryRepository categoryRepository; // បន្ថែម CategoryRepository
+    private final CategoryRepository categoryRepository;
+    private final ReviewRepository reviewRepository;
+    private final LessonRepository lessonRepository;
 
-    // create new course
-    public CourseResponse createCourse(CourseRequest request){
+    @Transactional
+    public CourseResponse createCourse(CourseRequest request) {
         User instructor = userRepository.findById(request.getInstructorId())
-                .orElseThrow(()-> new ResponseStatusException(HttpStatus.NOT_FOUND, "Instructor not found!"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Instructor not found!"));
 
         Course course = new Course();
         course.setTitle(request.getTitle());
         course.setDescription(request.getDescription());
         course.setInstructor(instructor);
 
-        // ពិនិត្យ និងភ្ជាប់ Category បើមានការបញ្ជូន categoryId មក
         if (request.getCategoryId() != null) {
             Category category = categoryRepository.findById(request.getCategoryId())
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Category not found!"));
@@ -52,21 +62,21 @@ public class CourseService {
         return mapToCourseResponse(savedCourse);
     }
 
-    // get all course
-    public List<CourseResponse> getAllCourses(){
+    @Transactional(readOnly = true)
+    public List<CourseResponse> getAllCourses() {
         return courseRepository.findAll().stream()
                 .map(this::mapToCourseResponse)
                 .collect(Collectors.toList());
     }
 
-    // get course by id
-    public CourseResponse getCourseById(Long id){
+    @Transactional(readOnly = true)
+    public CourseResponse getCourseById(Long id) {
         Course course = courseRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Course not found with id: " + id));
         return mapToCourseResponse(course);
     }
 
-    // Filter មើល Courses តាម Category ID
+    @Transactional(readOnly = true)
     public List<CourseResponse> getCoursesByCategoryId(Long categoryId) {
         if (!categoryRepository.existsById(categoryId)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Category not found with id: " + categoryId);
@@ -76,22 +86,20 @@ public class CourseService {
                 .collect(Collectors.toList());
     }
 
-    // update course
-    public CourseResponse updateCourse(Long id, CourseRequest request){
+    @Transactional
+    public CourseResponse updateCourse(Long id, CourseRequest request) {
         Course course = courseRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Course not found with id: " + id));
 
         course.setTitle(request.getTitle());
         course.setDescription(request.getDescription());
 
-        // បើមានការប្ដូរ Instructor ថ្មី
         if (request.getInstructorId() != null) {
             User instructor = userRepository.findById(request.getInstructorId())
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Instructor not found!"));
             course.setInstructor(instructor);
         }
 
-        // បើមានការប្ដូរ ឬបន្ថែម Category ថ្មី
         if (request.getCategoryId() != null) {
             Category category = categoryRepository.findById(request.getCategoryId())
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Category not found!"));
@@ -102,38 +110,40 @@ public class CourseService {
         return mapToCourseResponse(updatedCourse);
     }
 
-    // delete course
-    public void deleteCourse(Long id){
-        if (!courseRepository.existsById(id)){
+    @Transactional
+    public void deleteCourse(Long id) {
+        if (!courseRepository.existsById(id)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Course not found with id: " + id);
         }
         courseRepository.deleteById(id);
     }
 
-    // សម្រាប់ Student មើលតែរបស់ខ្លួនឯង
+    @Transactional(readOnly = true)
     public List<EnrollmentResponse> getEnrollmentsByStudentId(Long studentId) {
         return enrollmentRepository.findByStudentId(studentId).stream()
                 .map(this::mapToEnrollmentResponse)
                 .collect(Collectors.toList());
     }
 
-    // សម្រាប់ Admin មើលការចុះឈ្មោះទាំងអស់
+    @Transactional(readOnly = true)
     public List<EnrollmentResponse> getAllEnrollments() {
         return enrollmentRepository.findAll().stream()
                 .map(this::mapToEnrollmentResponse)
                 .collect(Collectors.toList());
     }
 
-    // student enroll
-    public EnrollmentResponse enrollStudent(EnrollmentRequest request){
+    @Transactional
+    public EnrollmentResponse enrollStudent(EnrollmentRequest request) {
         enrollmentRepository.findByStudentIdAndCourseId(request.getStudentId(), request.getCourseId())
-                .ifPresent(e->{
+                .ifPresent(e -> {
                     throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Student is already enrolled in this course.");
                 });
+
         Student student = studentRepository.findById(request.getStudentId())
-                .orElseThrow(()-> new ResponseStatusException(HttpStatus.NOT_FOUND, "Student not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Student not found"));
+
         Course course = courseRepository.findById(request.getCourseId())
-                .orElseThrow(()-> new ResponseStatusException(HttpStatus.NOT_FOUND, "Course not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Course not found"));
 
         Enrollment enrollment = new Enrollment();
         enrollment.setStudent(student);
@@ -145,6 +155,7 @@ public class CourseService {
         return mapToEnrollmentResponse(savedEnrollment);
     }
 
+    @Transactional(readOnly = true)
     public PagedResponse<CourseResponse> getCoursesPaged(String search, Long categoryId, Pageable pageable) {
         Page<Course> coursePage = courseRepository.searchAndFilterCourses(search, categoryId, pageable);
 
@@ -163,8 +174,18 @@ public class CourseService {
                 .build();
     }
 
-    // helper Mapping Methods
-    private CourseResponse mapToCourseResponse(Course course){
+    private CourseResponse mapToCourseResponse(Course course) {
+        List<Review> reviews = reviewRepository.findByCourseIdOrderByCreatedAtDesc(course.getId());
+        int reviewCount = reviews.size();
+        double averageRating = reviews.isEmpty()
+                ? 0.0
+                : Math.round(reviews.stream()
+                .mapToDouble(Review::getRating)
+                .average()
+                .orElse(0.0) * 10.0) / 10.0;
+
+        int lessonCount = (int) lessonRepository.countByCourseId(course.getId());
+
         return CourseResponse.builder()
                 .id(course.getId())
                 .title(course.getTitle())
@@ -173,10 +194,13 @@ public class CourseService {
                 .instructorEmail(course.getInstructor() != null ? course.getInstructor().getEmail() : null)
                 .categoryId(course.getCategory() != null ? course.getCategory().getId() : null)
                 .categoryName(course.getCategory() != null ? course.getCategory().getName() : null)
+                .averageRating(averageRating)
+                .reviewCount(reviewCount)
+                .lessonCount(lessonCount)
                 .build();
     }
 
-    private EnrollmentResponse mapToEnrollmentResponse(Enrollment enrollment){
+    private EnrollmentResponse mapToEnrollmentResponse(Enrollment enrollment) {
         return EnrollmentResponse.builder()
                 .id(enrollment.getId())
                 .studentId(enrollment.getStudent() != null ? enrollment.getStudent().getId() : null)

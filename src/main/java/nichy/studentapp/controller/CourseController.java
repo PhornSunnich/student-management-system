@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.util.List;
 import java.util.Set;
 
@@ -18,18 +19,17 @@ import java.util.Set;
 @RequestMapping("/api/courses")
 @RequiredArgsConstructor
 public class CourseController {
+
     private final CourseService courseService;
 
     private static final Set<String> ALLOWED_SORT_FIELDS = Set.of("id", "title");
 
-    // create new course
     @PostMapping
-    public ResponseEntity<CourseResponse> createCourse(@RequestBody CourseRequest request){
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'ROLE_ADMIN', 'INSTRUCTOR', 'ROLE_INSTRUCTOR')")
+    public ResponseEntity<CourseResponse> createCourse(@RequestBody CourseRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(courseService.createCourse(request));
     }
 
-    // 1. Get Courses with Search, Category Filter & Pagination
-    // ឧទាហរណ៍៖ GET /api/courses?page=0&size=10&search=Java&categoryId=1&sortBy=id&direction=desc
     @GetMapping
     public ResponseEntity<PagedResponse<CourseResponse>> getCourses(
             @RequestParam(required = false) String search,
@@ -51,26 +51,22 @@ public class CourseController {
         return ResponseEntity.ok(courseService.getCoursesPaged(search, categoryId, pageable));
     }
 
-    // 2. Get Course by ID
     @GetMapping("/{id}")
     public ResponseEntity<CourseResponse> getCourseById(@PathVariable Long id) {
         return ResponseEntity.ok(courseService.getCourseById(id));
     }
 
-    // 3. Filter Courses by Category ID
     @GetMapping("/category/{categoryId}")
     public ResponseEntity<List<CourseResponse>> getCoursesByCategory(@PathVariable Long categoryId) {
         return ResponseEntity.ok(courseService.getCoursesByCategoryId(categoryId));
     }
 
-    // 4. Update Course
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'ROLE_ADMIN', 'INSTRUCTOR', 'ROLE_INSTRUCTOR')")
     public ResponseEntity<CourseResponse> updateCourse(@PathVariable Long id, @RequestBody CourseRequest request) {
         return ResponseEntity.ok(courseService.updateCourse(id, request));
     }
 
-    // 5. Delete Course
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'ROLE_ADMIN')")
     public ResponseEntity<Void> deleteCourse(@PathVariable Long id) {
@@ -78,9 +74,12 @@ public class CourseController {
         return ResponseEntity.noContent().build();
     }
 
-    // 6. Enrollment
     @PostMapping("/enroll")
-    public ResponseEntity<EnrollmentResponse> enrollCourse(@RequestBody EnrollmentRequest request){
+    @PreAuthorize("hasAnyAuthority('STUDENT', 'ROLE_STUDENT', 'ADMIN', 'ROLE_ADMIN')")
+    public ResponseEntity<EnrollmentResponse> enrollCourse(
+            Principal principal,
+            @RequestBody EnrollmentRequest request
+    ) {
         return ResponseEntity.status(HttpStatus.CREATED).body(courseService.enrollStudent(request));
     }
 
@@ -92,7 +91,10 @@ public class CourseController {
 
     @GetMapping("/{studentId}/enrollments")
     @PreAuthorize("hasAnyAuthority('STUDENT', 'ROLE_STUDENT', 'ADMIN', 'ROLE_ADMIN')")
-    public ResponseEntity<List<EnrollmentResponse>> getMyEnrollments(@PathVariable Long studentId) {
+    public ResponseEntity<List<EnrollmentResponse>> getMyEnrollments(
+            Principal principal,
+            @PathVariable Long studentId
+    ) {
         return ResponseEntity.ok(courseService.getEnrollmentsByStudentId(studentId));
     }
 }

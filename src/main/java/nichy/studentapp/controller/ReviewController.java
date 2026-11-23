@@ -7,7 +7,10 @@ import nichy.studentapp.dto.ReviewResponse;
 import nichy.studentapp.service.ReviewService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.security.Principal;
 
 @RestController
 @RequestMapping("/api/reviews")
@@ -18,7 +21,11 @@ public class ReviewController {
 
     // POST /api/reviews (បង្កើត ឬ Update Review របស់សិស្ស)
     @PostMapping
-    public ResponseEntity<ReviewResponse> submitReview(@RequestBody ReviewRequest request) {
+    @PreAuthorize("hasAnyAuthority('STUDENT', 'ROLE_STUDENT', 'ADMIN', 'ROLE_ADMIN')")
+    public ResponseEntity<ReviewResponse> submitReview(
+            Principal principal,
+            @RequestBody ReviewRequest request
+    ) {
         ReviewResponse response = reviewService.createOrUpdateReview(request);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
@@ -31,7 +38,11 @@ public class ReviewController {
 
     // DELETE /api/reviews/{reviewId}
     @DeleteMapping("/{reviewId}")
-    public ResponseEntity<String> deleteReview(@PathVariable Long reviewId) {
+    @PreAuthorize("hasAnyAuthority('STUDENT', 'ROLE_STUDENT', 'ADMIN', 'ROLE_ADMIN')")
+    public ResponseEntity<String> deleteReview(
+            Principal principal,
+            @PathVariable Long reviewId
+    ) {
         reviewService.deleteReview(reviewId);
         return ResponseEntity.ok("Review deleted successfully with id: " + reviewId);
     }
