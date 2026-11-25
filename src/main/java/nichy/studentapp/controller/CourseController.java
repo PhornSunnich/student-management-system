@@ -3,9 +3,6 @@ package nichy.studentapp.controller;
 import lombok.RequiredArgsConstructor;
 import nichy.studentapp.dto.*;
 import nichy.studentapp.service.CourseService;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -13,7 +10,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
 import java.util.List;
-import java.util.Set;
 
 @RestController
 @RequestMapping("/api/courses")
@@ -21,8 +17,6 @@ import java.util.Set;
 public class CourseController {
 
     private final CourseService courseService;
-
-    private static final Set<String> ALLOWED_SORT_FIELDS = Set.of("id", "title");
 
     @PostMapping
     @PreAuthorize("hasAnyAuthority('ADMIN', 'ROLE_ADMIN', 'INSTRUCTOR', 'ROLE_INSTRUCTOR')")
@@ -39,16 +33,9 @@ public class CourseController {
             @RequestParam(defaultValue = "id") String sortBy,
             @RequestParam(defaultValue = "asc") String direction
     ) {
-        int safePage = Math.max(page, 0);
-        int safeSize = Math.min(Math.max(size, 1), 100);
-        String safeSortBy = ALLOWED_SORT_FIELDS.contains(sortBy) ? sortBy : "id";
-
-        Sort sort = direction.equalsIgnoreCase("desc")
-                ? Sort.by(safeSortBy).descending()
-                : Sort.by(safeSortBy).ascending();
-
-        Pageable pageable = PageRequest.of(safePage, safeSize, sort);
-        return ResponseEntity.ok(courseService.getCoursesPaged(search, categoryId, pageable));
+        return ResponseEntity.ok(
+                courseService.getCoursesPaged(search, categoryId, page, size, sortBy, direction)
+        );
     }
 
     @GetMapping("/{id}")

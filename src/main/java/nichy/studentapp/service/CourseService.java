@@ -20,7 +20,9 @@ import nichy.studentapp.repository.ReviewRepository;
 import nichy.studentapp.repository.StudentRepository;
 import nichy.studentapp.repository.UserRepository;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -60,6 +62,51 @@ public class CourseService {
 
         Course savedCourse = courseRepository.save(course);
         return mapToCourseResponse(savedCourse);
+    }
+
+    @Transactional(readOnly = true)
+    public PagedResponse<CourseResponse> getCoursesPaged(
+            String search,
+            Long categoryId,
+            int page,
+            int size,
+            String sortBy,
+            String direction
+    ) {
+        int safePage = Math.max(page, 0);
+        int safeSize = Math.min(Math.max(size, 1), 100);
+        String sortField = List.of("id", "title").contains(sortBy) ? sortBy : "id";
+        Sort sort = "desc".equalsIgnoreCase(direction)
+                ? Sort.by(sortField).descending()
+                : Sort.by(sortField).ascending();
+        Pageable pageable = PageRequest.of(safePage, safeSize, sort);
+
+        boolean hasSearch = search != null && !search.isBlank();
+        Page<Course> result;
+        if (categoryId != null && hasSearch) {
+            result = courseRepository.findByCategoryIdAndTitleContainingIgnoreCase(
+                    categoryId, search.trim(), pageable);
+        } else if (categoryId != null) {
+            result = courseRepository.findByCategoryId(categoryId, pageable);
+        } else if (hasSearch) {
+            result = courseRepository.findByTitleContainingIgnoreCase(search.trim(), pageable);
+        } else {
+            result = courseRepository.findAll(pageable);
+        }
+
+        List<CourseResponse> items = result.getContent().stream()
+                .map(this::mapToCourseResponse)
+                .collect(Collectors.toList());
+
+        return new PagedResponse<>(
+                items,
+                result.getNumber(),
+                result.getSize(),
+                result.getTotalElements(),
+                result.getTotalPages(),
+                result.isFirst(),
+                result.isLast()
+        );
     }
 
     @Transactional(readOnly = true)
@@ -155,31 +202,13 @@ public class CourseService {
         return mapToEnrollmentResponse(savedEnrollment);
     }
 
-    @Transactional(readOnly = true)
-    public PagedResponse<CourseResponse> getCoursesPaged(String search, Long categoryId, Pageable pageable) {
-        Page<Course> coursePage = courseRepository.searchAndFilterCourses(search, categoryId, pageable);
-
-        List<CourseResponse> items = coursePage.getContent().stream()
-                .map(this::mapToCourseResponse)
-                .collect(Collectors.toList());
-
-        return PagedResponse.<CourseResponse>builder()
-                .content(items)
-                .pageNumber(coursePage.getNumber())
-                .pageSize(coursePage.getSize())
-                .totalElements(coursePage.getTotalElements())
-                .totalPages(coursePage.getTotalPages())
-                .first(coursePage.isFirst())
-                .last(coursePage.isLast())
-                .build();
-    }
-
     private CourseResponse mapToCourseResponse(Course course) {
         List<Review> reviews = reviewRepository.findByCourseIdOrderByCreatedAtDesc(course.getId());
         int reviewCount = reviews.size();
         double averageRating = reviews.isEmpty()
                 ? 0.0
                 : Math.round(reviews.stream()
+                .filter(r -> r.getRating() != null)
                 .mapToDouble(Review::getRating)
                 .average()
                 .orElse(0.0) * 10.0) / 10.0;
