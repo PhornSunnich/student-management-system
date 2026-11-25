@@ -29,12 +29,10 @@ public class CourseController {
             @RequestParam(required = false) String search,
             @RequestParam(required = false) Long categoryId,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "id") String sortBy,
-            @RequestParam(defaultValue = "asc") String direction
+            @RequestParam(defaultValue = "10") int size
     ) {
         return ResponseEntity.ok(
-                courseService.getCoursesPaged(search, categoryId, page, size, sortBy, direction)
+                courseService.getCoursesPaged(search, categoryId, page, size, "id", "asc")
         );
     }
 
