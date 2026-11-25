@@ -55,17 +55,18 @@ public class SecurityConfig {
                 .exceptionHandling(e -> e.authenticationEntryPoint(
                         new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/", "/api/auth/**").permitAll()
-                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
-                        .requestMatchers(
-                                HttpMethod.GET,
-                                "/api/categories/**",
-                                "/api/courses/**",
-                                "/api/lessons/**",
-                                "/api/reviews/course/**"
-                        ).permitAll()
-                        .anyRequest().authenticated()
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // CORS preflight
+                .requestMatchers("/", "/error", "/api/auth/**").permitAll()
+                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
+                // Public catalog: browsing needs no login
+                .requestMatchers(HttpMethod.GET,
+                        "/api/categories/**",
+                        "/api/courses",                 // the paged list
+                        "/api/courses/*",               // one course, e.g. /api/courses/5
+                        "/api/courses/category/**",
+                        "/api/lessons/course/*",        // lessons of one course
+                        "/api/reviews/course/*").permitAll()
+                .anyRequest().authenticated()
                 )
                 .headers(headers -> headers
                         .frameOptions(frame -> frame.sameOrigin())
